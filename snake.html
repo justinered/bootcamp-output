@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Snake Game with Score</title>
+  <style>
+    /* CSS Styles */
+    /* Body styles */
+    * {
+      background-size: cover;
+      background-color: #2fb523;
+      font-family: 'Poppins', sans-serif;
+      background-image: url(image/sabod.gif);
+    }
+    /* Canvas styles */
+    canvas {
+      border: 1px solid rgb(69, 69, 69);
+      border-width: 20px;
+      display: block;
+      margin: 0 auto;
+      background-color: rgb(207, 207, 207);
+      margin-top: 200px;
+      background-image: url(image/sss.png);
+    }
+    /* Start screen styles */
+    #startScreen {
+      padding: 450px;
+      background-image: url(image/rain.gif);
+      text-align: center;
+    }
+    /* Container styles */
+    .container p {
+      text-align: center;
+      font-size: 40px;
+      color: rgb(255, 255, 255);
+      text-decoration: dotted;
+      background-image: none;
+      background: black;
+    }
+    .container h1 {
+      color: rgb(255, 255, 255);
+      font-size: 60px;
+      text-align: center;
+      border-width: 10px;
+      border-color: #09bb68;
+      background-image: url(image/sss.png);
+    }
+    .container button {
+      text-align: center;
+      background-color: rgb(97, 52, 0);
+      font-size: 50px;
+      background-image: none;
+      color: white;
+      border-radius: 20px;
+      align-items: center;
+    }
+    /* Score styles */
+    #score {
+      background-image: none;
+      background: BLACK;
+    }
+    /* Highest score styles */
+    #highestScore {
+      background-image: none;
+      background: BLACK;
+    }
+    /* Game loop styles */
+    .gameloop {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background audio -->
+  <audio autoplay="" src="calm.mp3"loop></audio>
+
+  <!-- Game container -->
+  <div class="container">
+    <div id="startScreen">
+        <h1>SNAKE GAME</h1>
+        <button onclick="startGame()">start</button>
+    </div>
+    <!-- Display score and highest score -->
+    <p>Score: <span id="score">0</span></p>
+    <p>Highest Score: <span id="highestScore">0</span></p>
+  </div>
+  
+  <!-- Game canvas -->
+  <canvas id="gameCanvas" width="400" height="400" style="display: none;"></canvas>
+
+  <script>
+    // JavaScript variables
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let snake = [{x: 10, y: 10}];
+    let dx = 0;
+    let dy = 0;
+    let foodX = 15;
+    let foodY = 15;
+    let score = 0;
+    let highestScore = localStorage.getItem('snakeHighestScore') || 0;
+    let gameRunning = false;
+    let eatSound = new Audio('baby.m4a'); // Sound for eating
+    let colors = ['#00ff00','#ff8000','#00ffff','7f00ff','#ff33ff','#ffff00','#FFCCCC','#9999ff']; // Colors for the snake
+    let currentColorIndex = 0; // Index of the current snake color
+
+    // Function to draw the snake and food on the canvas
+    function drawSnake() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = colors[currentColorIndex]; // Set snake color
+      snake.forEach(segment => {
+        ctx.fillRect(segment.x * 20, segment.y * 20, 20, 20);
+      });
+      ctx.fillStyle = 'red';
+      ctx.fillRect(foodX * 20, foodY * 20, 20, 20);
+    }
+
+    // Function to move the snake
+    function moveSnake() {
+      let head = {x: snake[0].x + dx, y: snake[0].y + dy};
+    
+      // Teleport snake to the opposite side if it goes out of bounds
+      if (head.x < 0) head.x = canvas.width / 20 - 1;
+      if (head.x >= canvas.width / 20) head.x = 0;
+      if (head.y < 0) head.y = canvas.height / 20 - 1;
+      if (head.y >= canvas.height / 20) head.y = 0;
+    
+      snake.unshift(head);
+    
+      if (head.x === foodX && head.y === foodY) {
+        score += 1;
+        document.getElementById('score').textContent = score;
+        if (score > highestScore) {
+          highestScore = score;
+          localStorage.setItem('snakeHighestScore', highestScore);
+          document.getElementById('highestScore').textContent = highestScore;
+        }
+        foodX = Math.floor(Math.random() * canvas.width / 20);
+        foodY = Math.floor(Math.random() * canvas.height / 20);
+        eatSound.play(); // Play eat sound
+        currentColorIndex = (currentColorIndex + 1) % colors.length; // Change snake color
+      } else {
+        snake.pop();
+      }
+    }
+
+    // Function to check for collisions
+    function checkCollision() {
+      if (snake[0].x < 0 || snake[0].x >= canvas.width / 20 ||
+          snake[0].y < 0 || snake[0].y >= canvas.height / 20 ||
+          snake.slice(1).some(segment => segment.x === snake[0].x && segment.y === snake[0].y)) {
+        return true;
+      }
+      return false;
+    }
+
+    // Main game loop
+    function gameLoop() {
+      if (checkCollision()) {
+        alert('Game Over! Your Score: ' + score);
+        snake = [{x: 10, y: 10}];
+        dx = 0;
+        dy = 0;
+        foodX = 15;
+        foodY = 15;
+        score = 0;
+        document.getElementById('score').textContent = score;
+        gameRunning = false;
+        document.getElementById('startScreen').style.display = 'block';
+        canvas.style.display = 'none';
+      }
+      moveSnake();
+      drawSnake();
+      if (gameRunning) {
+        setTimeout(gameLoop, 100);
+      }
+    }
+
+    // Event listener for key presses
+    document.addEventListener('keydown', event => {
+      if (!gameRunning) return;
+      switch(event.key) {
+        case 'ArrowUp':
+          if (dy !== 1) {
+            dx = 0;
+            dy = -1;
+          }
+          break;
+        case 'ArrowDown':
+          if (dy !== -1) {
+            dx = 0;
+            dy = 1;
+          }
+          break;
+        case 'ArrowLeft':
+          if (dx !== 1) {
+            dx = -1;
+            dy = 0;
+          }
+          break;
+        case 'ArrowRight':
+          if (dx !== -1) {
+            dx = 1;
+            dy = 0;
+          }
+          break;
+      }
+    });
+
+    // Function to start the game
+    function startGame() {
+      gameRunning = true;
+      document.getElementById('startScreen').style.display = 'none';
+      canvas.style.display = 'block';
+      gameLoop();
+    }
+
+    // Initialize the highest score
+    document.getElementById('highestScore').textContent = highestScore;
+  </script>
+</body>
+</html>
